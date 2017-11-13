@@ -1,0 +1,74 @@
+---
+title: "Base64Encoding"
+author: "Anjani Bajaj"
+date: "October 30, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Encoding for large ECG dataset
+
+This is the ecg data which is to be encoded in base64. The summary of the data looks like below:
+
+```{r ecg}
+ecg <- read.csv("ecg_sample.csv")
+ecg$Time <- ecg$Time - min(ecg$Time)              
+summary(ecg)
+```
+
+# Plots for the raw data
+
+You can also embed plots, for example:
+
+```{r, echo=FALSE}
+plot_timespan <- function(t1, t2, ecg_data){
+  with(ecg_data[ecg_data$Time >=t1 & ecg_data$Time < t2,],
+       plot(ec ~ Time, type='l')
+  )
+}
+
+plot_timespan(0, 58959, ecg)
+```
+
+# Here 7500 stands for 1 minute worth of data (125 * 60 * number of minutes)
+```{r}
+encodeecg <- data.frame(ecg)
+i <- 7500
+encodeecg <- encodeecg[1:i,]
+ecg_encoded_data <- encodeecg$ec
+```
+# Trying to use base64 encoding from the library caTools
+```
+```
+```{r}
+library(caTools)
+encoding1 <- base64encode(ecg_encoded_data, size=NA, endian=.Platform$endian)
+nchar(encoding1)
+```
+
+# Lossy compression 
+Dividing all the mV values by 20 and converting them into integers to accomodate each measurement in 1 byte.
+```{r}
+encodeecg <- data.frame(ecg)
+i <- 7500
+encodeecg <- encodeecg[1:i,]
+ecg_encoded_data <- encodeecg$ec
+lossyecg <- as.integer(ecg_encoded_data/20)
+summary(lossyecg)
+plot(lossyecg, type= 'l')
+```
+
+# Extra Space
+Multiplying all the mV values by 20 to accomodate each measurement in ~2 bytes
+```{r}
+encodeecg <- data.frame(ecg)
+i <- 7500
+encodeecg <- encodeecg[1:i,]
+ecg_encoded_data <- encodeecg$ec
+extraspaceecg <- ecg_encoded_data*20
+summary(extraspaceecg)
+plot(extraspaceecg, type= 'l')
+```
