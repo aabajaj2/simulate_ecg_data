@@ -82,7 +82,8 @@ unpack2values <- function(pv){ # 3 8 bit values
   pv3 <- as.integer(pv[3])
   res <- bitwAnd(bitwShiftL(bitwAnd(pv1, mask12), 4), makeLast40s) + bitwAnd(bitwShiftR(pv2,4), mask4) 
   res2 <- bitwShiftL(bitwAnd(pv2, mask4), 8) + pv3
-  c(res, res2)
+  answer <- c(res, res2)
+  return (answer)
 }
 
 newunpack <- function(vec){
@@ -93,10 +94,8 @@ newunpack <- function(vec){
     unpack <- append(unpack, value)
     if(count%%3 == 0){
       answer <- unpack2values(unpack)
-      result <- append(unpack, answer)
-      print(unpack)
+      result <- append(result, answer)
       print(result)
-      print(count)
       unpack <-c()
     }
     count <- count + 1
@@ -105,7 +104,12 @@ newunpack <- function(vec){
 }
 
 originalVector <- newunpack(decodedVector)
+newecg$ec
 originalVector
+
+#Test if my vector is same
+all.equal(packedVector, decodedVector)
+all.equal(newecg$ec, originalVector)
 
 # Write a series of tests for checking the unpacking
 testVector <- round(runif(n = 20, min =0 , max = 2800))
