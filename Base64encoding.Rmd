@@ -18,17 +18,6 @@ ecg$Time <- ecg$Time - min(ecg$Time)
 summary(ecg)
 ```
 
-## Plots for the raw data
-```{r, echo=FALSE}
-plot_timespan <- function(t1, t2, ecg_data){
-  with(ecg_data[ecg_data$Time >=t1 & ecg_data$Time < t2,],
-       plot(ec ~ Time, type='l')
-  )
-}
-
-plot_timespan(0, 58959, ecg)
-```
-
 ## Subtract the most negative value to make the dataset non-negative
 These non-negative values can then be packed and encoded to transmit over the network
 ```{r}
@@ -143,3 +132,20 @@ newecg$ec
 all.equal(packedVector, decodedVector)
 all.equal(newecg$ec, retrievedVector)
 ```
+
+##Plots to compare the difference
+### Plot for the original data 
+```{r, echo=FALSE}
+plot_timespan <- function(t1, t2, ecg_data){
+  with(ecg_data[ecg_data$Time >=t1 & ecg_data$Time < t2,],
+       plot(ec ~ Time, type='l')
+  )
+}
+
+plot_timespan(0, 977, ecg)
+```
+
+
+### Plot for the retrieved data
+```{r, echo=FALSE}
+plot(retrievedVector, type='l')

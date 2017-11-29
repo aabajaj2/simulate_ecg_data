@@ -23,7 +23,6 @@ head(ecg)
 #Plotting the heart rate for 1 minute, 7500th obervation
 # plot_timespan(0, 2725, ecg)
 
-# Here 7500 stands for 1 minute worth of data (125 * 60 * number of minutes)
 i <- 125
 newecg <- ecg[1:i,]
 object.size(newecg$ec)
@@ -51,8 +50,14 @@ newpack <- function(vec){
   return(answer)
 }
 
-pack2values(newecg$ec[1], newecg$ec[2])
-packedVector <- newpack(newecg$ec)
+#Padding
+data <- newecg$ec
+if(length(data)%%2 != 0){
+  data <- append(data, 00)
+}
+
+pack2values(data[1], data[2])
+packedVector <- newpack(data)
 packedVector
 
 library(caTools)
@@ -61,10 +66,8 @@ nchar(encodedVector)
 encodedVector
 typeof(packedVector)
 
-typeof(encodedVector)
-
 decodedVector <- base64decode(encodedVector, size=NA, typeof(packedVector))
-nchar(decodedVector)
+length(decodedVector)
 decodedVector
 
 # 125 integer 12 bit -> how many base64 characters can it be encoded to, How short can I make it?
