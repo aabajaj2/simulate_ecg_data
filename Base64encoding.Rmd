@@ -10,7 +10,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Encoding for large ECG dataset
-
 This is the ecg data which is to be encoded in base64. The summary of the data looks like below:
 
 ```{r ecg}
@@ -19,10 +18,7 @@ ecg$Time <- ecg$Time - min(ecg$Time)
 summary(ecg)
 ```
 
-# Plots for the raw data
-
-You can also embed plots, for example:
-
+## Plots for the raw data
 ```{r, echo=FALSE}
 plot_timespan <- function(t1, t2, ecg_data){
   with(ecg_data[ecg_data$Time >=t1 & ecg_data$Time < t2,],
@@ -33,42 +29,66 @@ plot_timespan <- function(t1, t2, ecg_data){
 plot_timespan(0, 58959, ecg)
 ```
 
-# Here 7500 stands for 1 minute worth of data (125 * 60 * number of minutes)
+## Subtract the most negative value to make the dataset non-negative
+These non-negative values can then be packed and encoded to transmit over the network
 ```{r}
-encodeecg <- data.frame(ecg)
-i <- 7500
-encodeecg <- encodeecg[1:i,]
-ecg_encoded_data <- encodeecg$ec
+c<-min(ecg$ec)
+ecg$ec <- ecg$ec-c
+summary(ecg)
+head(ecg)
+
 ```
-# Trying to use base64 encoding from the library caTools
+
+Let us take 1 sec of data, i=125
+```{r}
+i <- 125
+newecg <- ecg[1:i,]
+object.size(newecg$ec)
+summary(newecg)
 ```
+
+##A function to pack a vector of non-negative 12 bit integer values
+```{r}
+pack2values <- function(v1, v2){ # must be non-negative integers in 12-bit range
+  mask8 <- 255
+  bitvec <- bitwShiftL(v1, 12) + v2 # 24 bit: v1v2
+  as.raw(c(bitwAnd(bitwShiftR(bitvec, 16), mask8), bitwAnd(bitwShiftR(bitvec, 8), mask8), bitwAnd(bitvec, mask8)))
+}
+
+newpack <- function(vec){
+  count <- 1
+  pack <- c()
+  answer <- c()
+  for (value in vec){
+    pack<-append(pack,value)
+    if(count%%2==0){
+      res<-pack2values(pack[1],pack[2])
+      answer <- append(answer,res)
+      #print(answer)
+      #print("HI")
+      pack <- c()
+    }
+    count <- count +1
+  }
+  return(answer)
+}
+pack2values(newecg$ec[1], newecg$ec[2])
+packedVector <- newpack(newecg$ec)
 ```
+The packed vector looks like this
+```{r}
+packedVector
+```
+
+## Base64 encoding from the library caTools to encode the packed vector 
 ```{r}
 library(caTools)
-encoding1 <- base64encode(ecg_encoded_data, size=NA, endian=.Platform$endian)
-nchar(encoding1)
+encodedVector <- base64encode(packedVector, size=NA, endian=.Platform$endian)
+nchar(encodedVector)
+encodedVector
 ```
 
-# Lossy compression 
-Dividing all the mV values by 20 and converting them into integers to accomodate each measurement in 1 byte.
-```{r}
-encodeecg <- data.frame(ecg)
-i <- 7500
-encodeecg <- encodeecg[1:i,]
-ecg_encoded_data <- encodeecg$ec
-lossyecg <- as.integer(ecg_encoded_data/20)
-summary(lossyecg)
-plot(lossyecg, type= 'l')
-```
+## The way to decode the vector
+The vector should be decoded after it is received at the destination after transmission
 
-# Extra Space
-Multiplying all the mV values by 20 to accomodate each measurement in ~2 bytes
-```{r}
-encodeecg <- data.frame(ecg)
-i <- 7500
-encodeecg <- encodeecg[1:i,]
-ecg_encoded_data <- encodeecg$ec
-extraspaceecg <- ecg_encoded_data*20
-summary(extraspaceecg)
-plot(extraspaceecg, type= 'l')
-```
+

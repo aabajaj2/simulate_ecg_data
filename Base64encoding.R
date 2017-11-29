@@ -35,6 +35,10 @@ pack2values <- function(v1, v2){ # must be non-negative integers in 12-bit range
   as.raw(c(bitwAnd(bitwShiftR(bitvec, 16), mask8), bitwAnd(bitwShiftR(bitvec, 8), mask8), bitwAnd(bitvec, mask8)))
 }
 
+if (ndByte < 3*nBlock) x[(ndByte+1) : (3*nBlock)] = 0;
+dim(x) = c(3, nBlock)         # reshape the data
+y = matrix(as.integer(0), 4, nBlock)  # for the encoded data
+
 newpack <- function(vec){
   count <- 1
   pack <- c()
@@ -63,7 +67,7 @@ nchar(encodedVector)
 encodedVector
 typeof(packedVector)
 
-decodedVector <- base64decode(encodedVector, raw)
+decodedVector <- base64decode(encodedVector, size=NA, raw)
 nchar(decodedVector)
 decodedVector
 
@@ -120,6 +124,7 @@ for (i in seq_along(testVector)){
   testUnpack <-unpack2values(testPack)
   print(testUnpack)
 }
+
 # after I get the pack working for length N
 all.equal(testVector, testUnpack)
 ans <- pack2values(4096,6)
