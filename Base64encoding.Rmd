@@ -41,7 +41,7 @@ head(ecg)
 
 Let us take 1 sec of data, i=125
 ```{r}
-i <- 125
+i <- 124
 newecg <- ecg[1:i,]
 object.size(newecg$ec)
 summary(newecg)
@@ -64,8 +64,6 @@ newpack <- function(vec){
     if(count%%2==0){
       res<-pack2values(pack[1],pack[2])
       answer <- append(answer,res)
-      #print(answer)
-      #print("HI")
       pack <- c()
     }
     count <- count +1
@@ -90,5 +88,58 @@ encodedVector
 
 ## The way to decode the vector
 The vector should be decoded after it is received at the destination after transmission
+```{r}
+decodedVector <- base64decode(encodedVector, size=NA, typeof(packedVector))
+nchar(decodedVector)
+decodedVector
+```
 
+Functions to unpack the decoded vector
+```{r}
+unpack2values <- function(pv){ # 3 8 bit values
+  mask4 <- 15
+  mask12 <- 2047 
+  makeLast40s <- 4080
+  pv1 <- as.integer(pv[1])
+  pv2 <- as.integer(pv[2])
+  pv3 <- as.integer(pv[3])
+  res <- bitwAnd(bitwShiftL(bitwAnd(pv1, mask12), 4), makeLast40s) + bitwAnd(bitwShiftR(pv2,4), mask4) 
+  res2 <- bitwShiftL(bitwAnd(pv2, mask4), 8) + pv3
+  answer <- c(res, res2)
+  return (answer)
+}
 
+newunpack <- function(vec){
+  count <- 1
+  unpack<- c()
+  result <- c()
+  for(value in vec){
+    unpack <- append(unpack, value)
+    if(count%%3 == 0){
+      answer <- unpack2values(unpack)
+      result <- append(result, answer)
+      # print(result)
+      unpack <-c()
+    }
+    count <- count + 1
+  }
+  return(result)
+}
+```
+
+### Unpacking Vector
+```{r}
+retrievedVector <- newunpack(decodedVector)
+retrievedVector
+```
+
+This is the original vector
+```{r}
+newecg$ec
+```
+
+#Final Test to check if these two vectors are same
+```{r}
+all.equal(packedVector, decodedVector)
+all.equal(newecg$ec, retrievedVector)
+```

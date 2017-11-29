@@ -35,10 +35,6 @@ pack2values <- function(v1, v2){ # must be non-negative integers in 12-bit range
   as.raw(c(bitwAnd(bitwShiftR(bitvec, 16), mask8), bitwAnd(bitwShiftR(bitvec, 8), mask8), bitwAnd(bitvec, mask8)))
 }
 
-if (ndByte < 3*nBlock) x[(ndByte+1) : (3*nBlock)] = 0;
-dim(x) = c(3, nBlock)         # reshape the data
-y = matrix(as.integer(0), 4, nBlock)  # for the encoded data
-
 newpack <- function(vec){
   count <- 1
   pack <- c()
@@ -48,8 +44,6 @@ newpack <- function(vec){
     if(count%%2==0){
       res<-pack2values(pack[1],pack[2])
       answer <- append(answer,res)
-      #print(answer)
-      #print("HI")
       pack <- c()
     }
     count <- count +1
@@ -67,7 +61,9 @@ nchar(encodedVector)
 encodedVector
 typeof(packedVector)
 
-decodedVector <- base64decode(encodedVector, size=NA, raw)
+typeof(encodedVector)
+
+decodedVector <- base64decode(encodedVector, size=NA, typeof(packedVector))
 nchar(decodedVector)
 decodedVector
 

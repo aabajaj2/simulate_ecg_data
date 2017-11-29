@@ -164,18 +164,18 @@ summary(ecg)</code></pre>
 ## 5   32  657
 ## 6   40  564</code></pre>
 <p>Let us take 1 sec of data, i=125</p>
-<pre class="r"><code>i &lt;- 125
+<pre class="r"><code>i &lt;- 124
 newecg &lt;- ecg[1:i,]
 object.size(newecg$ec)</code></pre>
-<pre><code>## 544 bytes</code></pre>
+<pre><code>## 536 bytes</code></pre>
 <pre class="r"><code>summary(newecg)</code></pre>
 <pre><code>##       Time             ec        
 ##  Min.   :  0.0   Min.   : 395.0  
-##  1st Qu.:244.0   1st Qu.: 449.0  
-##  Median :488.0   Median : 498.0  
-##  Mean   :488.3   Mean   : 540.7  
-##  3rd Qu.:732.0   3rd Qu.: 544.0  
-##  Max.   :977.0   Max.   :1528.0</code></pre>
+##  1st Qu.:242.0   1st Qu.: 449.0  
+##  Median :484.0   Median : 498.0  
+##  Mean   :484.3   Mean   : 540.7  
+##  3rd Qu.:726.0   3rd Qu.: 542.5  
+##  Max.   :969.0   Max.   :1528.0</code></pre>
 </div>
 <div id="a-function-to-pack-a-vector-of-non-negative-12-bit-integer-values" class="section level2">
 <h2>A function to pack a vector of non-negative 12 bit integer values</h2>
@@ -194,8 +194,6 @@ newpack &lt;- function(vec){
     if(count%%2==0){
       res&lt;-pack2values(pack[1],pack[2])
       answer &lt;- append(answer,res)
-      #print(answer)
-      #print(&quot;HI&quot;)
       pack &lt;- c()
     }
     count &lt;- count +1
@@ -230,6 +228,86 @@ nchar(encodedVector)</code></pre>
 <div id="the-way-to-decode-the-vector" class="section level2">
 <h2>The way to decode the vector</h2>
 <p>The vector should be decoded after it is received at the destination after transmission</p>
+<pre class="r"><code>decodedVector &lt;- base64decode(encodedVector, size=NA, typeof(packedVector))
+nchar(decodedVector)</code></pre>
+<pre><code>##   [1] 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+##  [36] 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+##  [71] 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+## [106] 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+## [141] 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+## [176] 2 2 2 2 2 2 2 2 2 2 2</code></pre>
+<pre class="r"><code>decodedVector</code></pre>
+<pre><code>##   [1] 3b f5 e5 56 13 6f 29 12 34 1f 21 cd 1c 61 ba 1b 51 b0 1b 51 b0 1b 31
+##  [24] ba 1a e1 b5 1c b1 a4 18 b1 a4 1a 91 a1 19 a1 9f 19 a1 98 19 a1 a6 1a
+##  [47] 61 b0 1c 11 bc 1c 11 c4 19 51 a6 1b c1 ae 1d 21 d7 1c 41 c9 1d a1 dc
+##  [70] 1c d1 ba 1b a1 c4 1d 71 e6 1f 41 e8 1f 02 06 20 31 f9 1f c2 06 1e b1
+##  [93] f0 1f 71 dc 1d c1 d5 1d c1 da 1e 11 e6 1e 11 e3 1f 71 f9 1f 01 f2 1f
+## [116] c2 06 20 82 14 20 d2 08 20 f2 08 20 f2 12 20 82 03 1f 42 06 21 42 19
+## [139] 22 52 28 22 02 23 22 d2 3e 22 d2 2d 23 b2 31 21 e1 ed 1a e1 f2 3a 55
+## [162] f8 5e 04 0b 31 e2 ae 25 d2 36 22 82 28 22 52 12 21 72 2f 22 82 23 22
+## [185] a2 1e</code></pre>
+<p>Functions to unpack the decoded vector</p>
+<pre class="r"><code>unpack2values &lt;- function(pv){ # 3 8 bit values
+  mask4 &lt;- 15
+  mask12 &lt;- 2047 
+  makeLast40s &lt;- 4080
+  pv1 &lt;- as.integer(pv[1])
+  pv2 &lt;- as.integer(pv[2])
+  pv3 &lt;- as.integer(pv[3])
+  res &lt;- bitwAnd(bitwShiftL(bitwAnd(pv1, mask12), 4), makeLast40s) + bitwAnd(bitwShiftR(pv2,4), mask4) 
+  res2 &lt;- bitwShiftL(bitwAnd(pv2, mask4), 8) + pv3
+  answer &lt;- c(res, res2)
+  return (answer)
+}
+
+newunpack &lt;- function(vec){
+  count &lt;- 1
+  unpack&lt;- c()
+  result &lt;- c()
+  for(value in vec){
+    unpack &lt;- append(unpack, value)
+    if(count%%3 == 0){
+      answer &lt;- unpack2values(unpack)
+      result &lt;- append(result, answer)
+      # print(result)
+      unpack &lt;-c()
+    }
+    count &lt;- count + 1
+  }
+  return(result)
+}</code></pre>
+<div id="unpacking-vector" class="section level3">
+<h3>Unpacking Vector</h3>
+<pre class="r"><code>retrievedVector &lt;- newunpack(decodedVector)
+retrievedVector</code></pre>
+<pre><code>##   [1]  959 1509 1377  879  657  564  498  461  454  442  437  432  437  432
+##  [15]  435  442  430  437  459  420  395  420  425  417  410  415  410  408
+##  [29]  410  422  422  432  449  444  449  452  405  422  444  430  466  471
+##  [43]  452  457  474  476  461  442  442  452  471  486  500  488  496  518
+##  [57]  515  505  508  518  491  496  503  476  476  469  476  474  481  486
+##  [71]  481  483  503  505  496  498  508  518  520  532  525  520  527  520
+##  [85]  527  530  520  515  500  518  532  537  549  552  544  547  557  574
+##  [99]  557  557  571  561  542  493  430  498  933 1528 1504 1035  798  686
+## [113]  605  566  552  552  549  530  535  559  552  547  554  542</code></pre>
+<p>This is the original vector</p>
+<pre class="r"><code>newecg$ec</code></pre>
+<pre><code>##   [1]  959 1509 1377  879  657  564  498  461  454  442  437  432  437  432
+##  [15]  435  442  430  437  459  420  395  420  425  417  410  415  410  408
+##  [29]  410  422  422  432  449  444  449  452  405  422  444  430  466  471
+##  [43]  452  457  474  476  461  442  442  452  471  486  500  488  496  518
+##  [57]  515  505  508  518  491  496  503  476  476  469  476  474  481  486
+##  [71]  481  483  503  505  496  498  508  518  520  532  525  520  527  520
+##  [85]  527  530  520  515  500  518  532  537  549  552  544  547  557  574
+##  [99]  557  557  571  561  542  493  430  498  933 1528 1504 1035  798  686
+## [113]  605  566  552  552  549  530  535  559  552  547  554  542</code></pre>
+</div>
+</div>
+<div id="final-test-to-check-if-these-two-vectors-are-same" class="section level1">
+<h1>Final Test to check if these two vectors are same</h1>
+<pre class="r"><code>all.equal(packedVector, decodedVector)</code></pre>
+<pre><code>## [1] TRUE</code></pre>
+<pre class="r"><code>all.equal(newecg$ec, retrievedVector)</code></pre>
+<pre><code>## [1] TRUE</code></pre>
 </div>
 
 
